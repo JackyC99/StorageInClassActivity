@@ -43,22 +43,24 @@ class MainActivity : AppCompatActivity() {
         showButton.setOnClickListener {
             downloadComic(numberEditText.text.toString())
         }
+        loadComic()
 
     }
 
     // Fetches comic from web as JSONObject
-    private fun downloadComic (comicId: String) {
+    private fun downloadComic(comicId: String) {
         val url = "https://xkcd.com/$comicId/info.0.json"
-        requestQueue.add (
-            JsonObjectRequest(url
-                , {showComic(it)}
-                , {}
+        requestQueue.add(
+            JsonObjectRequest(
+                url,
+                { showComic(it); saveComic(it) },
+                { error -> Toast.makeText(this, "Error loading comic", Toast.LENGTH_SHORT).show() }
             )
         )
     }
 
     // Display a comic for a given comic JSON object
-    private fun showComic (comicObject: JSONObject) {
+    private fun showComic(comicObject: JSONObject) {
         titleTextView.text = comicObject.getString("title")
         descriptionTextView.text = comicObject.getString("alt")
         Picasso.get().load(comicObject.getString("img")).into(comicImageView)
@@ -66,8 +68,26 @@ class MainActivity : AppCompatActivity() {
 
     // Implement this function
     private fun saveComic(comicObject: JSONObject) {
-
+        val prefs = getSharedPreferences("com.example.networkapp", MODE_PRIVATE)
+        with(prefs.edit()) {
+            putString("title", comicObject.getString("title"))
+            putString("alt", comicObject.getString("alt"))
+            putString("img", comicObject.getString("img"))
+            apply()
+        }
     }
 
+    private fun loadComic() {
+        val prefs = getSharedPreferences("com.example.networkapp", MODE_PRIVATE)
+        val title = prefs.getString("title", null)
+        val alt = prefs.getString("alt",null)
+        val img = prefs.getString("img", null)
+
+        if (title != null && alt != null && img != null) {
+            titleTextView.text = title
+            descriptionTextView.text = alt
+            Picasso.get().load(img).into(comicImageView)
+        }
+    }
 
 }
